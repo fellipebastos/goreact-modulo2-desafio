@@ -21,6 +21,32 @@ export const Repository = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
+
+    &:hover .dismiss,
+    &:hover .refresh {
+      opacity: 1;
+    }
+
+    .dismiss {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: red;
+      opacity: 0;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .refresh {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: lightblue;
+      opacity: 0;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
 
     img {
       width: 64px;
@@ -43,6 +69,11 @@ export const Repository = styled.div`
     li {
       font-weight: bold;
       padding: 12px 20px;
+
+      .icon {
+        color: #999;
+        margin-right: 12px;
+      }
 
       small {
         font-weight: normal;

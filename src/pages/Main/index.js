@@ -19,6 +19,11 @@ export default class Main extends Component {
     repositories: [],
   };
 
+  async componentDidMount() {
+    this.setState({ loading: true });
+    this.setState({ loading: false, repositories: await this.getLocalRepositories() });
+  }
+
   handleAddRepository = async (e) => {
     e.preventDefault();
 
@@ -29,15 +34,54 @@ export default class Main extends Component {
 
       repository.lastCommit = moment(repository.pushed_at).fromNow();
 
-      this.setState({
-        repositoryInput: '',
-        repositories: [...this.state.repositories, repository],
-        repositoryError: false,
-      });
+      this.setState(
+        {
+          repositoryInput: '',
+          repositories: [...this.state.repositories, repository],
+          repositoryError: false,
+        },
+        async () => await localStorage.setItem('repositories', JSON.stringify(this.state.repositories)),
+      );
     } catch (err) {
       this.setState({ repositoryError: true });
     } finally {
       this.setState({ loading: false });
+    }
+  };
+
+  // Get local repositories from localStorage
+  getLocalRepositories = async () => JSON.parse(await localStorage.getItem('repositories')) || [];
+
+  // Remove repository from localStorage
+  handleRemoveRepository = async (id) => {
+    const { repositories } = this.state;
+    const resultRepositories = repositories.filter(repository => repository.id !== id);
+
+    this.setState(
+      { repositories: resultRepositories },
+      async () => await localStorage.setItem('repositories', JSON.stringify(this.state.repositories)),
+    );
+  };
+
+  // Refresh repository stats
+  handleRefreshRepository = async (id) => {
+    const { repositories } = this.state;
+    const repository = repositories.find(repository => repository.id === id);
+
+    try {
+      const { data } = await api.get(`/repos/${repository.full_name}`);
+
+      data.lastCommit = moment(data.pushed_at).fromNow();
+
+      this.setState({
+        repositoryError: false,
+        repositoryInput: '',
+        repositories: repositories.map(repository => (repository.id === data.id ? data : repository)),
+      });
+
+      await localStorage.setItem('repositories', JSON.stringify(repositories));
+    } catch (err) {
+      this.setState({ repositoryError: true });
     }
   };
 
@@ -58,7 +102,11 @@ export default class Main extends Component {
           </button>
         </Form>
 
-        <CompareList repositories={this.state.repositories} />
+        <CompareList
+          repositories={this.state.repositories}
+          removeRepository={this.handleRemoveRepository}
+          refreshRepository={this.handleRefreshRepository}
+        />
       </Container>
     );
   }
